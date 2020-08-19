@@ -9,7 +9,6 @@
 #include <limits>
 #include <cmath>
 #include<iostream>
-#include "PID.h"
 
 
 using namespace std;
@@ -29,10 +28,9 @@ PID::~PID() {}
 void PID::Init() {
 
   // set PID coefficients
-  
-  this->Kp = 0.2;
-  this->Ki = 1e-5;
-  this->Kd = 1.0;
+  this->Kp = 0.135;
+  this->Kd = 1.28;
+  this->Ki = 1.75e-5; //0.00001
 
   // prepare controller for its first step
   init_step = true;
@@ -42,11 +40,12 @@ void PID::Init() {
   i_error = 0.0;
   d_error = 0.0;
   
-  // initialize twiddle state 
-  twiddle = false;
   
-//   //steer value updated following every error update
-//   steer_val = 0.0;
+  // Counters.
+  counter = 0;
+  error_total = 0.0;
+  min_error = std::numeric_limits<double>::max();
+  max_error = std::numeric_limits<double>::min();  
 }
 
 void PID::Init(double Kp, double Ki, double Kd) {
@@ -55,6 +54,18 @@ void PID::Init(double Kp, double Ki, double Kd) {
   this->Kd = Kd;
   
   p_error = d_error = i_error = 0.0;
+}
+
+double PID::AverageError() {
+  return error_total / counter;
+}
+
+double PID::MinError() {
+  return min_error;
+}
+
+double PID::MaxError() {
+  return max_error;
 }
 
 void PID::UpdateError(double cte) {
@@ -69,23 +80,25 @@ void PID::UpdateError(double cte) {
   i_error += cte * dt;
 
   // Derivative error
-  // during first step there is not enough available information to
-  // calculate a precise derivative
-  if (init_step) {
-    init_step = false;
-  } else {
-    d_error = (cte - prev_cte) / dt;
-  }
-
-  // Update previous cte
+  d_error = cte - prev_cte;
+  
   prev_cte = cte;
 
+  error_total += cte;
+  counter++;
+
+  if ( cte > max_error ) {
+    max_error = cte;
+  }
+  if ( cte < min_error ) {
+    min_error = cte;
+  }
+  
+
 }
 
-double PID::UpdateSteerVal() {
-  return - Kp * p_error - Ki * i_error - Kd * d_error;
+double PID::TotalError() {
+  return p_error * Kp + i_error * Ki + d_error * Kd;
 }
 
-// void PID::ControlDrift() {
-//   return;
-// }
+

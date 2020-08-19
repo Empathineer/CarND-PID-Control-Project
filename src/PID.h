@@ -34,9 +34,12 @@ public:
   double Kd; // derivative coeff 
 
   /*
-  * State Booleans
-  */ 
-  bool twiddle;
+  * Error trackers 
+  */
+  long counter;
+  double error_total;
+  double min_error;
+  double max_error;
   
   /*
   * Constructor
@@ -53,17 +56,30 @@ public:
   */
 //   void Init(double Kp, double Ki, double Kd);
   void Init();
-
+ 
+  /*
+  * Overload init function to pass coeff vals directly from main()
+  */
   void Init(double Kp, double Ki, double Kd);
+  
+  double AverageError(); 
+
+  double MinError();
+
+  double MaxError(); 
+  
   /*
   * Update the PID error variables given cross track error.
   */
   void UpdateError(double cte);
 
   /*
-  * Output control command.
+  * Output total error.
   */
-  double UpdateSteerVal();
+  double TotalError();
+  /*
+  * Update steering value.
+  */
 };
 
 #endif /* PID_H */
